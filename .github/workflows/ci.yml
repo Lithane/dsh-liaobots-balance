@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: node ${{ matrix.node }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is the primary target (DSH desktop app), Ubuntu catches
+        # path/case/line-ending assumptions; both engine lines are exercised.
+        os: [ubuntu-latest, windows-latest]
+        node: ['22.x', '24.x']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: test/package-lock.json
+
+      # The host half has no imports at all, so it runs before any install.
+      - name: Host half (routes, loopback fence, credentials, failover, cache, tool contract, remount claims)
+        run: node test/host.test.mjs
+
+      # test/ is a separate dependency tree (jsdom + react + semver) kept out of
+      # the plugin package, so `package.test.mjs` and `client.test.mjs` need it.
+      - name: Install test-only dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: test
+
+      - name: Packaging metadata (exports, locale display metadata, bundle patch, DSH peer range, zero deps)
+        run: node test/package.test.mjs
+
+      - name: Peer pre-check against the DSH version this build targets
+        run: node test/package.test.mjs 0.2.0-rc.2
+
+      - name: Browser half (jsdom mount, card and popover copy, thresholds, polling, footer stacking)
+        run: node test/client.test.mjs
+
+      # Guards the published tarball contents: lib + locale + patch + README only.
+      - name: Publishable contents
+        run: npm pack --dry-run

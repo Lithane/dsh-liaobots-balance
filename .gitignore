@@ -1,0 +1,27 @@
+# Dependencies (the plugin itself has none; test/node_modules is the jsdom+react tree
+# installed by `npm ci` inside test/, and is deliberately not committed)
+node_modules/
+test/node_modules/
+
+# Packaging / tooling caches
+*.tgz
+.npm-cache-tmp/
+.npm/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS and editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Secrets and local overrides
+.env
+.env.local
+.env.*.local
+
+# Backups written by scripts/enable-in-profile.mjs and similar helpers
+*.bak-*

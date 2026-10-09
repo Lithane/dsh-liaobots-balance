@@ -1,0 +1,13 @@
+# The plugin is developed on Windows and consumed on every platform, so normalise
+# text to LF in the repository regardless of which OS commits it.
+* text=auto eol=lf
+
+# Assets that must never be line-ending or encoding converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary

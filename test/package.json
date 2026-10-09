@@ -1,0 +1,12 @@
+{
+  "name": "dsh-liaobots-balance-tests",
+  "private": true,
+  "description": "Test-only dependencies for the dsh-liaobots-balance browser half. Kept out of the plugin package so the plugin itself stays dependency-free. The plugin itself is NOT a dependency here: that file:.. self-link turned the test directory into a junction back to the workspace root, so anything walking the installed (link:) package with symlinks followed could recurse forever. Tests reach the plugin by relative path, and test/package.test.mjs by the package's own exports self-reference.",
+  "type": "module",
+  "dependencies": {
+    "jsdom": "^26.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "semver": "^7.8.5"
+  }
+}
