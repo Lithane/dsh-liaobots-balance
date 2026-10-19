@@ -214,8 +214,8 @@ await test("documented payload maps to balance/amount/used/remainingRatio", asyn
 	assert.equal(body.used, 14.5);
 	assert.equal(body.remainingRatio, 0.855);
 	assert.equal(body.host, "https://gateway.example");
-	assert.equal(body.lowThreshold, 10);
-	assert.equal(body.criticalThreshold, 3);
+	assert.equal(body.lowThreshold, 5);
+	assert.equal(body.criticalThreshold, 1);
 	assert.equal(body.topUpURL, "https://liaobots.work");
 	assert.equal(body.stackCards, true, "stacked sidebar layout is the default");
 	assert.ok(typeof body.fetchedAt === "number");
@@ -402,6 +402,10 @@ await test("Config ~standard validator applies defaults and coerces host lists",
 	assert.equal(value.lowThreshold, 0);
 	assert.equal(value.apiKeyEnv, "LIAO_API_KEY");
 	assert.equal(value.stackCards, true);
+	// Colour thresholds are absolute credit amounts: yellow below 5, red below 1.
+	assert.equal(module.Config.defaults.lowThreshold, 5);
+	assert.equal(module.Config.defaults.criticalThreshold, 1);
+	assert.equal(module.Config["~standard"].validate({}).value.criticalThreshold, 1);
 	assert.equal(module.Config["~standard"].validate({ stackCards: false }).value.stackCards, false);
 	assert.equal(module.Config["~standard"].validate({ stackCards: "yes" }).value.stackCards, true);
 	assert.equal(module.Config["~standard"].validate("nope").issues.length, 1);

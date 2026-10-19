@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Liaobots 余额",
-    "description": "在侧边栏底部显示 Liaobots 剩余积分；点开弹层可看总额度、已用积分、剩余占比进度条与最近扣费记录。"
+    "description": "在侧边栏底部显示 Liaobots 剩余积分；点开弹层可看总额度、已用积分与最近扣费记录。"
   }
 }

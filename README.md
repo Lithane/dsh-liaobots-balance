@@ -6,7 +6,7 @@
 [![Zero deps](https://img.shields.io/badge/dependencies-zero-brightgreen?style=flat-square)]()
 
 给 DeepSeek Harness GUI 用的 **Liaobots 余额插件**：在侧边栏底部显示 Liaobots 剩余积分，
-点开弹层可以看到总额度、已用积分、剩余占比进度条、低额度预警，以及最近的扣费记录。
+点开弹层可以看到总额度、已用积分、低额度预警，以及最近的扣费记录。
 
 界面沿用你现在用的 `dsh-balance-widget`（DS 余额卡片）的样式：同样的圆角卡片、
 同样的收窄成图标栏的行为、同样的弹层与刷新按钮，只是品牌文案改成 `LB账户余额`，
@@ -19,8 +19,6 @@
 │ 总积分           100  │     │ 剩余积分 ⓘ          85.5  │
 └───────────────────────┘     │ 总积分   ⓘ           100  │
                               │ 已用积分 ⓘ          14.5  │
-                              │ 剩余占比 ⓘ           86%  │
-                              │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░        │
                               │ 最近扣费                  │
                               │ gpt-6-luna  -0.12  10-01 12:30 │
                               │ 去充值              ⟳     │
@@ -132,12 +130,25 @@ node scripts\enable-in-profile.mjs desktop
 也可以手动把仓库路径加进 `~/.dsh/profiles/desktop/package.json` 的依赖与 `dsh.profile.bundles`，
 第 2 步的 `scripts/enable-in-profile.mjs` 做的就是这件事（改 profile 文件前会先备份成 `package.json.bak-<时间戳>`）。
 
-装好后可以用下面这条命令确认 profile 已经包含这个插件行：
+装好后可以这样确认 profile 真的包含这个插件行：
 
 ```powershell
-& "$env:LOCALAPPDATA\Programs\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd" --profile desktop --dump-config |
-  Select-String liaobots-balance
+$p = "$env:USERPROFILE\.dsh\profiles\desktop"
+
+# 1) 依赖与 bundle 清单里都应当出现 dsh-liaobots-balance
+Get-Content "$p\package.json" | Select-String dsh-liaobots-balance
+
+# 2) 链接应当指向本仓库（LinkType = Junction，Target = 本仓库路径）
+Get-Item "$p\node_modules\dsh-liaobots-balance" | Select-Object LinkType, Target
+
+# 3) 最直接的证据：在对话里问一句余额，宿主半会用 liaobots_balance 工具回答
 ```
+
+⚠️ `dsh --profile desktop --dump-config` 在这里**不管用**：`desktop` profile 由 Electron 应用独占管理，
+这条命令会直接报 `error: profile "desktop" is managed exclusively by the Electron application` 并退出 1。
+`--dump-config` 只适用于非 Electron 管理的 profile（`web` / `tui` 等）。
+第 2 步还有两个前提：链接不是指向旧目录名的悬空 junction（改名/移动过仓库后要重新 `dsh plugin add "link:…"`），
+且 `dsh.profile.bundles` 里有这个包名（`dsh plugin add` 通常会自动登记，`enable-in-profile.mjs` 是兜底）。
 
 卸载：
 
@@ -186,8 +197,8 @@ node test\package.test.mjs 0.3.0    # 最后一项即"peer 范围是否接受该
 | `requestTimeoutMs` | `8000` | 单个域名的请求超时 |
 | `refreshIntervalMs` | `60000` | 卡片自动刷新间隔（下限 5000） |
 | `usagePageSize` | `10` | 弹层请求的扣费记录条数（上限 100） |
-| `lowThreshold` | `10` | 低于该值转为告警色 |
-| `criticalThreshold` | `3` | 低于该值转为错误色并提示立即充值 |
+| `lowThreshold` | `5` | 剩余积分低于该值，余额文字转为黄色；按余额绝对值判断，与占比无关 |
+| `criticalThreshold` | `1` | 剩余积分低于该值，余额文字转为红色并提示立即充值 |
 | `topUpURL` | `https://liaobots.work` | 弹层「去充值」打开的地址 |
 | `stackCards` | `true` | 侧边栏布局：`true` 时本卡片独占整行（`flex: 1 1 100%`）并登记让 footer 那行换行，于是排在 DS 余额卡**下方**（上下分布）。`false` 时本卡片完全不参与（不声明整行、也不登记换行）；但**只要 DS 余额卡在场，那一行仍会换行**，所以不会回到左右并排 |
 
@@ -235,10 +246,10 @@ DSH 在插件管理器改动 profile 后会**重新组合**插件树，这一次
 node test\host.test.mjs            # 宿主端 26 项：路由、回环围栏、凭据、解析、故障转移、缓存、工具契约、重复挂载/跨实例共享/未声明服务
 node test\host.test.mjs --live     # 追加一次真实网关探测（用无效登录码，预期归类为 auth）
 npm run test:install               # 测试依赖（jsdom + react + semver），装在 test\ 里，与插件包隔离
-node test\client.test.mjs          # 前端 18 项：真实 jsdom 挂载、卡片/弹层文案、阈值、错误态、轮询间隔、上下排列、图标回退
+node test\client.test.mjs          # 前端 19 项：真实 jsdom 挂载、卡片/弹层文案、阈值、错误态、轮询间隔、上下排列、图标回退
 node test\package.test.mjs         # 打包元信息 7 项：exports 解析、locale 展示元信息、bundle patch、DSH peer 兼容、零依赖
 node test\package.test.mjs 0.3.0   # 换一个 DSH 版本号跑同一套，用于升级前的 peer 预检
-npm test                           # 上面三套一起跑（51 项），等价于 CI
+npm test                           # 上面三套一起跑（52 项），等价于 CI
 ```
 
 `package.test.mjs` 要用到 `semver`（也来自 `test/`），所以 `npm run test:install`（或 `cd test; npm ci`）
@@ -286,7 +297,7 @@ LICENSE                      MIT
 | 卡片显示 `—`，弹层提示「未找到登录码 LIAO_API_KEY」 | profile 里没有可解析的 Liaobots Key：在 DSH 设置里给 `liao` 提供方填 Key，或设置 `LIAO_API_KEY` 后重启 |
 | 弹层提示「登录码无效：user not found」 | 登录码本身无效/过期，去 Liaobots 后台重新复制 |
 | 弹层提示「无法连接 Liaobots 网关：… 连接超时」 | 当前网络到所有网关域名都不通：挂代理，或在配置里把 `baseURL` 换成实测可用的域名 |
-| 侧边栏没有这张卡 | 宿主端没加载：确认 `--dump-config` 里有 `liaobots-balance`，然后重启 DSH |
+| 侧边栏没有这张卡 | 宿主端没加载：先按「安装」一节的 3 步核对（依赖/清单里有它、`node_modules` 下的链接不是悬空 junction），然后重启 DSH。`dsh --profile desktop --dump-config` 对 `desktop` profile **不可用**（Electron 独占管理，会报错退出） |
 | **升级 DSH 后**卡片与两条路由一起消失、日志里毫无线索 | peer 闸门把 bundle 静默跳过了（只记 `skippedBundles`）：用 `node test\package.test.mjs <新版本>` 预检，确认新版本可用后放宽 `peerDependencies["@deepseek-ai/dsh"]`（见「DSH 版本闸门」） |
 | 两张卡片还是左右并排 | 前端 bundle 还是旧的：先刷新页面（Ctrl+R），仍然并排就重启 DSH。若确认已加载新版仍并排，说明换行写到了 `display: contents` 的出口容器上（见「侧边栏里的排列方式」第 1 点） |
 | 插件列表里找不到这张卡片 | 列表用的是模块名而不是卡片文案：看 `liaobots-balance`（设置→插件列表）或 `dsh-liaobots-balance`（侧栏插件页的已安装分组）。装上本仓库的 `locale/*.json` 后显示为 **Liaobots 余额**；设置里的清单是打开时取一份快照，重开设置页即可刷新 |

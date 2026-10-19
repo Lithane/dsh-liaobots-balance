@@ -120,8 +120,8 @@ const BALANCE_PAYLOAD = {
 	used: 14.5,
 	remainingRatio: 0.855,
 	host: "https://ai.liaobots1.work",
-	lowThreshold: 10,
-	criticalThreshold: 3,
+	lowThreshold: 5,
+	criticalThreshold: 1,
 	topUpURL: "https://liaobots.work"
 };
 const USAGE_PAYLOAD = {
@@ -247,19 +247,20 @@ await test("the card shows the balance, the brand label and the total quota", as
 	await act(async () => { view.root.unmount(); });
 });
 
-await test("clicking the card opens the popover with quota, spending and ratio", async () => {
+await test("clicking the card opens the popover with quota and spending", async () => {
 	const { ctx, registrations } = makeClientCtx();
 	base.plugin.apply(ctx);
 	const view = await mount(registrations);
 	await view.click(view.container.querySelector("button"));
 	const text = view.body();
-	for (const expected of ["剩余积分", "85.5", "总积分", "已用积分", "14.5", "剩余占比", "86%", "最近扣费"]) {
+	for (const expected of ["剩余积分", "85.5", "总积分", "已用积分", "14.5", "最近扣费"]) {
 		assert.ok(text.includes(expected), `popover missing ${expected} in: ${text}`);
 	}
-	const fill = globalThis.document.querySelector(".dshlb_barFill");
-	assert.ok(fill !== null, "ratio bar rendered");
-	assert.equal(fill.style.width, "85.5%");
-	assert.equal(fill.getAttribute("data-level"), null);
+	// The remaining/total ratio and its bar were removed: they said nothing the
+	// two amounts above do not already say.
+	assert.ok(!text.includes("剩余占比"), `ratio row must be gone in: ${text}`);
+	assert.equal(globalThis.document.querySelector(".dshlb_bar"), null, "ratio bar must be gone");
+	assert.equal(globalThis.document.querySelector(".dshlb_barFill"), null);
 	await act(async () => { view.root.unmount(); });
 });
 
@@ -288,34 +289,46 @@ await test("collapsed sidebar renders the compact rail variant", async () => {
 	await act(async () => { view.root.unmount(); });
 });
 
-await test("a critical balance switches to the error level and warns", async () => {
+await test("a balance below 1 switches to the error level and warns", async () => {
 	const { ctx, registrations } = makeClientCtx();
 	base.plugin.apply(ctx);
 	const view = await mount(registrations, {
-		payload: { ...BALANCE_PAYLOAD, balance: 2, used: 98, remainingRatio: 0.02 }
+		payload: { ...BALANCE_PAYLOAD, balance: 0.8, used: 99.2 }
 	});
 	const amount = view.container.querySelector(".dshlb_sideAmount");
 	assert.equal(amount.getAttribute("data-level"), "2");
 	await view.click(view.container.querySelector("button"));
 	const text = view.body();
 	assert.ok(text.includes("剩余积分即将耗尽"), `warning missing in: ${text}`);
-	const fill = globalThis.document.querySelector(".dshlb_barFill");
-	assert.equal(fill.getAttribute("data-level"), "2");
-	assert.equal(fill.style.width, "2%");
+	// The ratio payload still arrives, but nothing renders a bar from it.
+	assert.equal(globalThis.document.querySelector(".dshlb_barFill"), null);
 	await act(async () => { view.root.unmount(); });
 });
 
-await test("a low balance uses the warn level and the ten-percent threshold", async () => {
+await test("a balance below 5 uses the warn level", async () => {
 	const { ctx, registrations } = makeClientCtx();
 	base.plugin.apply(ctx);
 	const view = await mount(registrations, {
-		payload: { ...BALANCE_PAYLOAD, balance: 7, used: 93, remainingRatio: 0.07 }
+		payload: { ...BALANCE_PAYLOAD, balance: 4.5, used: 95.5 }
 	});
 	assert.equal(view.container.querySelector(".dshlb_sideAmount").getAttribute("data-level"), "1");
 	await view.click(view.container.querySelector("button"));
 	assert.ok(view.body().includes("剩余积分偏低"));
-	assert.equal(globalThis.document.querySelector(".dshlb_barFill").getAttribute("data-level"), "1");
 	await act(async () => { view.root.unmount(); });
+});
+
+await test("colour thresholds sit on the balance boundary: 5 is normal, 1 is yellow, below 1 is red", async () => {
+	const { ctx, registrations } = makeClientCtx();
+	base.plugin.apply(ctx);
+	const level = async (balance) => {
+		const view = await mount(registrations, { payload: { ...BALANCE_PAYLOAD, balance, used: 100 - balance } });
+		const attr = view.container.querySelector(".dshlb_sideAmount").getAttribute("data-level");
+		await act(async () => { view.root.unmount(); });
+		return attr;
+	};
+	assert.equal(await level(5), null, "5 is not below the warn threshold");
+	assert.equal(await level(1), "1", "1 is below 5 but not below 1");
+	assert.equal(await level(0.99), "2", "below 1 turns red");
 });
 
 await test("a gateway failure surfaces the host error inside the popover", async () => {
