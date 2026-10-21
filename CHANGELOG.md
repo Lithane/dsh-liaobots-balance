@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-21
+
 ### Changed
 
 - Removed the remaining-ratio row and the progress bar from the popover. The ratio of
@@ -53,5 +55,6 @@ First public release.
 - No runtime dependencies; the browser half is plain JavaScript loaded by the GUI without a
   build step.
 
-[Unreleased]: https://github.com/Lithane/dsh-liaobots-balance/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Lithane/dsh-liaobots-balance/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Lithane/dsh-liaobots-balance/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Lithane/dsh-liaobots-balance/releases/tag/v1.0.0
