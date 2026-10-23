@@ -1,6 +1,6 @@
 {
   "name": "dsh-liaobots-balance",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Liaobots credit-balance widget for the DeepSeek Harness GUI: a sidebar footer card shows the remaining Liaobots credits and opens a popover with total quota and the most recent deductions. Host half proxies the documented GET /api/v1/credits endpoint (loopback-only routes, credential never reaches the browser); browser half renders the card with the same look as dsh-balance-widget. Zero runtime dependencies.",
   "type": "module",
   "main": "lib/index.js",

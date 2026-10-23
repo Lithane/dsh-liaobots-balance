@@ -6,7 +6,7 @@
 [![Zero deps](https://img.shields.io/badge/dependencies-zero-brightgreen?style=flat-square)]()
 
 给 DeepSeek Harness GUI 用的 **Liaobots 余额插件**：在侧边栏底部显示 Liaobots 剩余积分，
-点开弹层可以看到总额度、低额度预警，以及最近的扣费记录。
+点开弹层可以看到总额度、低额度预警，以及近两天内最多 5 条的最近扣费记录。
 
 界面沿用你现在用的 `dsh-balance-widget`（DS 余额卡片）的样式：同样的圆角卡片、
 同样的收窄成图标栏的行为、同样的弹层与刷新按钮，只是品牌文案改成 `LB账户余额`，
@@ -92,6 +92,9 @@ DS 余额卡（`dsh-account-balance`）用的是**同一套协议**。
 
 插件默认走 `https://ai.liaobots1.work`（`dsh-balance-widget` 同款的备用域名，实测主域名在部分网络下不通），
 并自带**域名故障转移**：某个域名连不上/报错就自动试下一个，之后优先复用上次成功的域名。
+
+弹层的「最近扣费」只展示**近两天内、最多 5 条**（按时间倒序）：客户端固定多请求 20 条，
+再在本地按两天窗口过滤并截断，所以接口本身不受影响，也不会因为窗口外的旧记录挤掉名额。
 
 ## 安全边界
 
@@ -195,7 +198,7 @@ node test\package.test.mjs 0.3.0    # 最后一项即"peer 范围是否接受该
 | `apiKeyEnv` | `LIAO_API_KEY` | 登录码在凭据库里的名字 |
 | `requestTimeoutMs` | `8000` | 单个域名的请求超时 |
 | `refreshIntervalMs` | `60000` | 卡片自动刷新间隔（下限 5000） |
-| `usagePageSize` | `10` | 弹层请求的扣费记录条数（上限 100） |
+| `usagePageSize` | `10` | 宿主端默认扣费记录条数（上限 100）；弹层固定请求 20 条后再筛出近两天、最多 5 条展示 |
 | `lowThreshold` | `5` | 剩余积分低于该值，余额文字转为黄色；按余额绝对值判断，与占比无关 |
 | `criticalThreshold` | `1` | 剩余积分低于该值，余额文字转为红色并提示立即充值 |
 | `topUpURL` | `https://liaobots.work` | 弹层「去充值」打开的地址 |
@@ -245,10 +248,10 @@ DSH 在插件管理器改动 profile 后会**重新组合**插件树，这一次
 node test\host.test.mjs            # 宿主端 26 项：路由、回环围栏、凭据、解析、故障转移、缓存、工具契约、重复挂载/跨实例共享/未声明服务
 node test\host.test.mjs --live     # 追加一次真实网关探测（用无效登录码，预期归类为 auth）
 npm run test:install               # 测试依赖（jsdom + react + semver），装在 test\ 里，与插件包隔离
-node test\client.test.mjs          # 前端 19 项：真实 jsdom 挂载、卡片/弹层文案、阈值、错误态、轮询间隔、上下排列、图标回退
+node test\client.test.mjs          # 前端 20 项：真实 jsdom 挂载、卡片/弹层文案、阈值、扣费窗口、错误态、轮询间隔、上下排列、图标回退
 node test\package.test.mjs         # 打包元信息 7 项：exports 解析、locale 展示元信息、bundle patch、DSH peer 兼容、零依赖
 node test\package.test.mjs 0.3.0   # 换一个 DSH 版本号跑同一套，用于升级前的 peer 预检
-npm test                           # 上面三套一起跑（52 项），等价于 CI
+npm test                           # 上面三套一起跑（53 项），等价于 CI
 ```
 
 `package.test.mjs` 要用到 `semver`（也来自 `test/`），所以 `npm run test:install`（或 `cd test; npm ci`）

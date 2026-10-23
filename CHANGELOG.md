@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-23
+
+### Changed
+
+- The popover's "recent deductions" list now shows only the last two days and at most five
+  rows, newest first. The client asks the host for 20 rows and filters them locally, so the
+  usage route and its `usagePageSize` option are unchanged; the empty state now reads
+  "no deductions in the last two days".
+
 ## [1.1.0] - 2026-10-21
 
 ### Changed
@@ -58,6 +67,7 @@ First public release.
 - No runtime dependencies; the browser half is plain JavaScript loaded by the GUI without a
   build step.
 
-[Unreleased]: https://github.com/Lithane/dsh-liaobots-balance/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Lithane/dsh-liaobots-balance/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Lithane/dsh-liaobots-balance/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Lithane/dsh-liaobots-balance/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Lithane/dsh-liaobots-balance/releases/tag/v1.0.0

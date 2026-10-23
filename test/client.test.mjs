@@ -124,19 +124,29 @@ const BALANCE_PAYLOAD = {
 	criticalThreshold: 1,
 	topUpURL: "https://liaobots.work"
 };
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
+/** Timestamps are relative to load time so the two-day window always holds them. */
+const USAGE_NOW = Date.now();
 const USAGE_PAYLOAD = {
 	ok: true,
 	balance: 85.5,
 	amount: 100,
 	usage: {
-		pageSize: 6,
+		pageSize: 20,
 		nextId: null,
 		list: [
-			{ id: 1, model: "gpt-6-luna", price: 0.12, tokens: 1200, createdAt: Date.UTC(2026, 9, 1, 12, 30) },
-			{ id: 2, model: "claude-fable-5-with-a-very-long-model-name", price: 0.3, tokens: 900, createdAt: Date.UTC(2026, 9, 1, 12, 40) }
+			{ id: 1, model: "gpt-6-luna", price: 0.12, tokens: 1200, createdAt: USAGE_NOW - 60 * MINUTE_MS },
+			{ id: 2, model: "claude-fable-5-with-a-very-long-model-name", price: 0.3, tokens: 900, createdAt: USAGE_NOW - 90 * MINUTE_MS }
 		]
 	}
 };
+/** The same `MM-DD HH:mm` shape the card renders, for direct assertions. */
+function formatTimeLike(ms) {
+	const date = new Date(ms);
+	const pad = (n) => String(n).padStart(2, "0");
+	return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 /** Mount the card with a fetch stub and return handles for assertions. */
 async function mount(registrations, { wide = true, payload = BALANCE_PAYLOAD, status = 200, onFetch } = {}) {
@@ -276,10 +286,41 @@ await test("recent deductions are listed with model, price and time", async () =
 	assert.ok(text.includes("gpt-6-luna"), `model row missing in: ${text}`);
 	assert.ok(text.includes("-0.12"), `price missing in: ${text}`);
 	assert.ok(text.includes("claude-fable-5"), `second row missing in: ${text}`);
-	assert.ok(text.includes("10-01") || text.includes("09-30"), `timestamp missing in: ${text}`);
+	assert.ok(text.includes(formatTimeLike(USAGE_PAYLOAD.usage.list[0].createdAt)), `timestamp missing in: ${text}`);
 	assert.ok(view.requests.some((url) => url.startsWith("/api/dsh-liaobots/usage?pageSize=")));
 	// The gateway that answered is shown, so a mirror failover is visible.
 	assert.ok(text.includes("https://ai.liaobots1.work/api/v1/credits"));
+	await act(async () => { view.root.unmount(); });
+});
+
+await test("deductions are limited to the last two days and at most five rows", async () => {
+	const { ctx, registrations } = makeClientCtx();
+	base.plugin.apply(ctx);
+	const now = Date.now();
+	const rows = [
+		{ id: 3, model: "third-model", price: 0.03, createdAt: now - 3 * HOUR_MS },
+		{ id: 8, model: "old-model", price: 9.99, createdAt: now - 49 * HOUR_MS },
+		{ id: 1, model: "newest-model", price: 0.01, createdAt: now - 1 * HOUR_MS },
+		{ id: 6, model: "sixth-model", price: 0.06, createdAt: now - 6 * HOUR_MS },
+		{ id: 2, model: "second-model", price: 0.02, createdAt: now - 2 * HOUR_MS },
+		{ id: 9, model: "older-model", price: 8.88, createdAt: now - 5 * 24 * HOUR_MS },
+		{ id: 5, model: "fifth-model", price: 0.05, createdAt: now - 5 * HOUR_MS },
+		{ id: 4, model: "fourth-model", price: 0.04, createdAt: now - 4 * HOUR_MS },
+		{ id: 7, model: "seventh-model", price: 0.07, createdAt: now - 7 * HOUR_MS }
+	];
+	const view = await mount(registrations, {
+		onFetch: (url) => (url.startsWith("/api/dsh-liaobots/balance")
+			? jsonResponse(200, BALANCE_PAYLOAD)
+			: jsonResponse(200, { ok: true, balance: 85.5, amount: 100, usage: { pageSize: 20, nextId: null, list: rows } }))
+	});
+	await view.click(view.container.querySelector("button"));
+	const models = [...globalThis.document.querySelectorAll(".dshlb_useModel")].map((el) => el.textContent);
+	assert.deepEqual(models, ["newest-model", "second-model", "third-model", "fourth-model", "fifth-model"]);
+	const text = view.body();
+	assert.ok(!text.includes("old-model"), `rows older than two days must be hidden: ${text}`);
+	assert.ok(!text.includes("older-model"));
+	// Ask for a wider page so rows just outside the window cannot starve the five slots.
+	assert.ok(view.requests.some((url) => url.startsWith("/api/dsh-liaobots/usage?pageSize=20")));
 	await act(async () => { view.root.unmount(); });
 });
 
