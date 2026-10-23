@@ -13,8 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed the remaining-ratio row and the progress bar from the popover. The ratio of
   remaining credits to total quota added no information the two amounts do not already
-  show, so the popover now stops at total quota and credits spent. The host routes still
-  return `remainingRatio` for API consumers, and the client simply ignores it.
+  show, so the popover now stops at the remaining credits and the total quota. The host
+  routes still return `remainingRatio` for API consumers, and the client ignores it.
+- Removed the credits-spent row as well. Total quota minus remaining credits is trivial
+  arithmetic the user can do in their head, so the popover is down to the two numbers that
+  matter. The host routes still return `used`, and the client ignores it.
 - Colour now follows the remaining balance only, never a ratio: the amount turns yellow
   below `lowThreshold` (default **5**) and red below `criticalThreshold` (default **1**).
   The previous defaults were 10 and 3.

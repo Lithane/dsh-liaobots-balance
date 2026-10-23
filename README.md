@@ -6,7 +6,7 @@
 [![Zero deps](https://img.shields.io/badge/dependencies-zero-brightgreen?style=flat-square)]()
 
 给 DeepSeek Harness GUI 用的 **Liaobots 余额插件**：在侧边栏底部显示 Liaobots 剩余积分，
-点开弹层可以看到总额度、已用积分、低额度预警，以及最近的扣费记录。
+点开弹层可以看到总额度、低额度预警，以及最近的扣费记录。
 
 界面沿用你现在用的 `dsh-balance-widget`（DS 余额卡片）的样式：同样的圆角卡片、
 同样的收窄成图标栏的行为、同样的弹层与刷新按钮，只是品牌文案改成 `LB账户余额`，
@@ -18,7 +18,6 @@
 │ LB账户余额      85.5  │     │ Liaobots 余额           × │
 │ 总积分           100  │     │ 剩余积分 ⓘ          85.5  │
 └───────────────────────┘     │ 总积分   ⓘ           100  │
-                              │ 已用积分 ⓘ          14.5  │
                               │ 最近扣费                  │
                               │ gpt-6-luna  -0.12  10-01 12:30 │
                               │ 去充值              ⟳     │

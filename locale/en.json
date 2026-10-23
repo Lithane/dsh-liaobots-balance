@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Liaobots Balance",
-    "description": "Shows the remaining Liaobots credits in the sidebar footer; the popover adds total quota, credits spent and recent deductions."
+    "description": "Shows the remaining Liaobots credits in the sidebar footer; the popover adds total quota and recent deductions."
   }
 }

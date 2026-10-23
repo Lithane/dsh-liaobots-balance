@@ -247,13 +247,13 @@ await test("the card shows the balance, the brand label and the total quota", as
 	await act(async () => { view.root.unmount(); });
 });
 
-await test("clicking the card opens the popover with quota and spending", async () => {
+await test("clicking the card opens the popover with the remaining and total credits", async () => {
 	const { ctx, registrations } = makeClientCtx();
 	base.plugin.apply(ctx);
 	const view = await mount(registrations);
 	await view.click(view.container.querySelector("button"));
 	const text = view.body();
-	for (const expected of ["剩余积分", "85.5", "总积分", "已用积分", "14.5", "最近扣费"]) {
+	for (const expected of ["剩余积分", "85.5", "总积分", "最近扣费"]) {
 		assert.ok(text.includes(expected), `popover missing ${expected} in: ${text}`);
 	}
 	// The remaining/total ratio and its bar were removed: they said nothing the
@@ -261,6 +261,9 @@ await test("clicking the card opens the popover with quota and spending", async 
 	assert.ok(!text.includes("剩余占比"), `ratio row must be gone in: ${text}`);
 	assert.equal(globalThis.document.querySelector(".dshlb_bar"), null, "ratio bar must be gone");
 	assert.equal(globalThis.document.querySelector(".dshlb_barFill"), null);
+	// Credits spent were dropped too: total quota minus remaining already says it.
+	assert.ok(!text.includes("已用积分"), `credits-spent row must be gone in: ${text}`);
+	assert.ok(!text.includes("14.5"), `credits-spent value must be gone in: ${text}`);
 	await act(async () => { view.root.unmount(); });
 });
 
